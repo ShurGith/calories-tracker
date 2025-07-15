@@ -1,14 +1,32 @@
-import { useState } from "react"
-import type { ChangeEvent, FormEvent } from "react"
+import { useEffect, useState } from "react"
+import type { ChangeEvent, Dispatch, FormEvent } from "react"
+import { v4 as uuidV4 } from 'uuid'
 import { categories } from "../data/categories"
 import type { Activity } from "../types/"
+import type { ActivityActions, ActivityState } from "../reducers/activity-reducers"
 
-function Form() {
-    const [activity, setActivity] = useState<Activity>({
-        category: 1,
-        name: '',
-        calories: 0,
-    })
+
+type FormProps = {
+    dispatch: Dispatch<ActivityActions>,
+    state: ActivityState,
+}
+
+const initialState: Activity = {
+    id: uuidV4(),
+    category: 1,
+    name: '',
+    calories: 0,
+}
+function Form({ dispatch, state }: FormProps) {
+    const [activity, setActivity] = useState<Activity>(initialState)
+
+    useEffect(() => {
+        if (state.activeId) {
+            const selectedActivity = state.activities.filter(actID => actID.id === state.activeId)[0]
+            setActivity(selectedActivity);
+        }
+    }, [state.activeId]);
+
     const handleChange = (e: ChangeEvent<HTMLSelectElement> | ChangeEvent<HTMLInputElement>) => {
         const isNumberField = ['calories', 'category'].includes(e.target.id)
         setActivity({
@@ -23,8 +41,14 @@ function Form() {
 
     const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
-        console.log("Enviado....");
-        // TODO: Add form submission logic here
+
+        dispatch({ type: 'save-activity', payload: { newActivity: activity } })
+
+        setActivity({
+            ...initialState,
+            id: uuidV4()
+        })
+
     }
 
     return (
